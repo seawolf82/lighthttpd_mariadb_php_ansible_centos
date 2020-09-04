@@ -1,0 +1,8 @@
+---
+
+- name: Reloading php-fdm service
+  command: systemctl restart php-fpm
+
+- name: Reloading lighttpd service
+  command: systemctl restart lighttpd
+

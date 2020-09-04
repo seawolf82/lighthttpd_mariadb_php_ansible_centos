@@ -1,0 +1,10 @@
+
+- hosts: web-servers
+  remote_user: root
+  roles:
+    - common
+    - lighttpd
+    - mariadb
+    - php7.2
+
+

@@ -1,0 +1,4 @@
+
+
+- name: Remove lighttpd
+  import_tasks: lighttpd_uninstall.yml

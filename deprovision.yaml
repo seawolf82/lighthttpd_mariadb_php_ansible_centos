@@ -1,0 +1,9 @@
+
+- hosts: web-servers
+  remote_user: root
+  roles:
+    - lighttpd_uninstall
+    - php7.2_uninstall
+    - mariadb_uninstall
+
+

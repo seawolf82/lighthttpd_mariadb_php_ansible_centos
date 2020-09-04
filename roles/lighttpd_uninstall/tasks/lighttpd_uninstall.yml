@@ -1,0 +1,74 @@
+---
+
+
+- name: disable lighttpd service
+  systemd:
+    name: lighttpd
+    enabled: no
+  tags: lighttpd
+  
+- name: Make sure lighttpd service is stopped
+  systemd:
+    state: stopped
+    name: lighttpd
+  tags: lighttpd
+
+- name: Remove lighttpd 
+  dnf:
+    name: lighttpd
+    state: absent
+  tags: lighttpd
+
+
+- name: Remove a list of list of lighttpd packages
+  dnf:
+    name:
+      - lighttpd-mod_mysql_vhost
+      - lighttpd-mod_authn_mysql
+      - lighttpd-fastcgi
+      - lighttpd-filesystem
+      - lighttpd-mod_authn_gssapi
+    state: absent
+  tags: lighttpd
+
+
+- name: Removing firewall rules http for lighttpd service
+  firewalld: 
+    service: http
+    permanent: true
+    state: disabled
+  notify: Reloading firewalld rules
+  tags: lighttpd
+
+- name: Removing firewall rules https for lighttpd service
+  firewalld: 
+    service: https
+    permanent: true
+    state: disabled
+  notify: Reloading firewalld rules
+  tags: lighttpd
+
+- name: Recursively remove directory /etc/lighttpd/l
+  file:
+    path: /etc/lighttpd/
+    state: absent
+  tags: lighttpd
+
+
+- name: Recursively remove directory /etc/lighttpd/l
+  file:
+    path: /var/cache/lighttpd
+    state: absent
+  tags: lighttpd
+
+
+- name: Set httpd_setrlimit flag off and keep it persistent across reboots
+  seboolean:
+    name: httpd_setrlimit
+    state: no
+    persistent: no
+  tags: lighttpd
+  
+
+
+

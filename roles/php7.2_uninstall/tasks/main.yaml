@@ -1,0 +1,27 @@
+---
+
+- name: Disable php-fpm service
+  systemd:
+    name: php-fpm
+    enabled: no
+  tags: php7
+  
+- name: Make sure php-fpm service is stopped
+  systemd:
+    state: stopped
+    name: php-fpm
+  tags: php7
+
+
+- name: Remove a list of packages php 7.2
+  dnf:
+    name:
+      - php 
+      - php-mysqlnd 
+      - php-gd 
+      - php-pdo
+      - php-mbstring
+      - php-fpm 
+      - lighttpd-fastcgi
+    state: absent
+  tags: php7

@@ -1,0 +1,7 @@
+---
+
+- name: Reloading firewalld rules
+  command: firewall-cmd --reload
+
+- name: Reloading lighttpd
+  command: systemctl restart lighttpd

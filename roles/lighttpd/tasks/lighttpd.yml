@@ -1,0 +1,136 @@
+---
+
+- name: install lighttpd 
+  dnf:
+    name: lighttpd
+    state: present
+  tags: lighttpd
+
+- name: ensure a list of lighttpd packages installed 
+  dnf:
+    name: "{{ packages }}"
+  vars:
+    packages:
+    - lighttpd-mod_mysql_vhost
+    - lighttpd-mod_authn_mysql
+    - lighttpd-fastcgi
+    - lighttpd-filesystem
+    - lighttpd-mod_authn_gssapi
+  tags: lighttpd
+  
+- name: enable lighttpd service
+  systemd:
+    name: lighttpd
+    enabled: yes
+  tags: lighttpd
+  
+- name: Make sure lighttpd service is running
+  systemd:
+    state: started
+    name: lighttpd
+  tags: lighttpd
+
+
+- name: adding firewall rules http for lighttpd service
+  firewalld: 
+    service: http
+    permanent: true
+    state: enabled
+  notify: Reloading firewalld rules
+  tags: lighttpd
+
+- name: adding firewall rules https for lighttpd service
+  firewalld: 
+    service: https
+    permanent: true
+    state: enabled
+  notify: Reloading firewalld rules
+  tags: lighttpd
+
+- name: Backup lighttpd.conf if it differs from the copied version
+  copy:
+    src: /etc/lighttpd/lighttpd.conf
+    dest: /etc/lighttpd/lighttpd.conf.bck
+    owner: root
+    group: root
+    mode: '0644'
+    remote_src: yes
+    backup: yes
+  tags: lighttpd
+
+
+- name: Copy lighttpd_modify.conf into /etc/lighttpd/
+  copy:
+    src: lighttpd_modify.conf
+    dest: /etc/lighttpd/lighttpd.conf
+    owner: root
+    group: root
+    mode: '0644'
+  tags: lighttpd
+
+- name: Copy modules_modify.conf into /etc/lighttpd/
+  copy:
+    src: modules_modify.conf
+    dest: /etc/lighttpd/modules.conf
+    owner: root
+    group: root
+    mode: '0644'
+  tags: lighttpd
+
+
+- name: Create a directory /var/cache/lighttpd if it does not exist
+  file:
+    path: /var/cache/lighttpd
+    state: directory
+    mode: '0755'
+  tags: lighttpd
+
+- name: Create a directory /var/cache/lighttpd/compress if it does not exist
+  file:
+    path: /var/cache/lighttpd/compress
+    state: directory
+    mode: '0755'
+  tags: lighttpd
+
+- name: Recursively change ownership of a directory
+  file:
+    path: /var/cache/lighttpd/compress
+    state: directory
+    recurse: yes
+    owner: lighttpd
+    group: lighttpd
+  tags: lighttpd
+
+
+- name: Set httpd_setrlimit flag on and keep it persistent across reboots
+  seboolean:
+    name: httpd_setrlimit
+    state: yes
+    persistent: yes
+  tags: lighttpd
+  
+
+
+- name: Backup fastcgi.conf if it differs from the copied version
+  copy:
+    src: /etc/lighttpd/conf.d/fastcgi.conf
+    dest: /etc/lighttpd/conf.d/fastcgi.conf.bck
+    owner: root
+    group: root
+    mode: '0644'
+    remote_src: yes
+    backup: yes
+  tags: lighttpd
+
+
+- name: Copy fastcgi_modify.conf into /etc/lighttpd/conf.d
+  copy:
+    src: fastcgi_modify.conf
+    dest: /etc/lighttpd/conf.d/fastcgi.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reloading lighttpd
+  tags: lighttpd
+
+
