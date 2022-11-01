@@ -1,9 +1,30 @@
 ---
 
 - name: install lighttpd 
+  yum:
+    name: lighttpd
+    state: present
+  when: ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "7"
+  tags: lighttpd
+
+- name: ensure a list of lighttpd packages installed 
+  yum:
+    name: "{{ packages }}"
+  vars:
+    packages:
+    - lighttpd-fastcgi
+    - lighttpd-mod_authn_mysql
+    - lighttpd-mod_geoip
+    - lighttpd-mod_mysql_vhost
+  when: ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "7" 
+  tags: lighttpd
+
+
+- name: install lighttpd 
   dnf:
     name: lighttpd
     state: present
+  when: (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "8") or (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "9")
   tags: lighttpd
 
 - name: ensure a list of lighttpd packages installed 
@@ -11,11 +32,16 @@
     name: "{{ packages }}"
   vars:
     packages:
-    - lighttpd-mod_mysql_vhost
-    - lighttpd-mod_authn_mysql
     - lighttpd-fastcgi
     - lighttpd-filesystem
     - lighttpd-mod_authn_gssapi
+    - lighttpd-mod_openssl
+    - lighttpd-mod_authn_pam
+    - lighttpd-mod_authn_sasl
+    - lighttpd-mod_gnutls
+    - lighttpd-mod_deflate
+    - lighttpd-mod_vhostdb_mysql
+  when: (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "8") or (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "9") 
   tags: lighttpd
   
 - name: enable lighttpd service
@@ -123,6 +149,18 @@
   tags: lighttpd
 
 
+- name: Copy fastcgi_modify_el7.conf into /etc/lighttpd/conf.d
+  copy:
+    src: fastcgi_modify_el7.conf
+    dest: /etc/lighttpd/conf.d/fastcgi.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reloading lighttpd
+  when: ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "7" 
+  tags: lighttpd
+
+
 - name: Copy fastcgi_modify.conf into /etc/lighttpd/conf.d
   copy:
     src: fastcgi_modify.conf
@@ -131,6 +169,5 @@
     group: root
     mode: '0644'
   notify: Reloading lighttpd
+  when: (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "8") or (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "9")
   tags: lighttpd
-
-

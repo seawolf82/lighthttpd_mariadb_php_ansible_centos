@@ -3,7 +3,7 @@
   remote_user: root
   roles:
     - lighttpd_uninstall
-    - php7.2_uninstall
+    - php_uninstall
     - mariadb_uninstall
 
 

@@ -20,15 +20,50 @@
   tags: lighttpd
 
 
-- name: Remove a list of list of lighttpd packages
-  dnf:
-    name:
-      - lighttpd-mod_mysql_vhost
-      - lighttpd-mod_authn_mysql
-      - lighttpd-fastcgi
-      - lighttpd-filesystem
-      - lighttpd-mod_authn_gssapi
+- name: Remove lighttpd 
+  yum:
+    name: lighttpd
     state: absent
+  when: ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "7"
+  tags: lighttpd
+
+- name: ensure a list of lighttpd packages removed 
+  yum:
+    name: "{{ packages }}"
+    state: absent
+  vars:
+    packages:
+    - lighttpd-fastcgi
+    - lighttpd-mod_authn_mysql
+    - lighttpd-mod_geoip
+    - lighttpd-mod_mysql_vhost
+  when: ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "7" 
+  tags: lighttpd
+
+
+- name: Remove lighttpd 
+  dnf:
+    name: lighttpd
+    state: absent
+  when: (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "8") or (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "9")
+  tags: lighttpd
+
+- name: ensure a list of lighttpd packages removed 
+  dnf:
+    name: "{{ packages }}"
+    state: absent
+  vars:
+    packages:
+    - lighttpd-fastcgi
+    - lighttpd-filesystem
+    - lighttpd-mod_authn_gssapi
+    - lighttpd-mod_openssl
+    - lighttpd-mod_authn_pam
+    - lighttpd-mod_authn_sasl
+    - lighttpd-mod_gnutls
+    - lighttpd-mod_deflate
+    - lighttpd-mod_vhostdb_mysql
+  when: (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "8") or (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "9") 
   tags: lighttpd
 
 
