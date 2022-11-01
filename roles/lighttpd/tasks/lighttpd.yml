@@ -56,6 +56,19 @@
     name: lighttpd
   tags: lighttpd
 
+- name: disable httpd service
+  systemd:
+    name: httpd
+    enabled: false
+  when: (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "8") or (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "9") 
+  tags: lighttpd
+  
+- name: Make sure httpd service is stopped
+  systemd:
+    state: stopped
+    name: httpd
+  when: (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "8") or (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "9") 
+  tags: lighttpd
 
 - name: adding firewall rules http for lighttpd service
   firewalld: 
@@ -82,6 +95,7 @@
     mode: '0644'
     remote_src: yes
     backup: yes
+  when: ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "7" 
   tags: lighttpd
 
 
@@ -92,6 +106,7 @@
     owner: root
     group: root
     mode: '0644'
+  when: ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "7" 
   tags: lighttpd
 
 - name: Copy modules_modify.conf into /etc/lighttpd/
@@ -101,6 +116,7 @@
     owner: root
     group: root
     mode: '0644'
+  when: ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "7" 
   tags: lighttpd
 
 
@@ -109,6 +125,7 @@
     path: /var/cache/lighttpd
     state: directory
     mode: '0755'
+  when: ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "7" 
   tags: lighttpd
 
 - name: Create a directory /var/cache/lighttpd/compress if it does not exist
@@ -116,6 +133,7 @@
     path: /var/cache/lighttpd/compress
     state: directory
     mode: '0755'
+  when: ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "7" 
   tags: lighttpd
 
 - name: Recursively change ownership of a directory
@@ -125,6 +143,7 @@
     recurse: yes
     owner: lighttpd
     group: lighttpd
+  when: ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "7" 
   tags: lighttpd
 
 
@@ -143,7 +162,6 @@
   tags: lighttpd
   
 
-
 - name: Backup fastcgi.conf if it differs from the copied version
   copy:
     src: /etc/lighttpd/conf.d/fastcgi.conf
@@ -153,6 +171,7 @@
     mode: '0644'
     remote_src: yes
     backup: yes
+  when: ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "7" 
   tags: lighttpd
 
 
@@ -176,5 +195,5 @@
     group: root
     mode: '0644'
   notify: Reloading lighttpd
-  when: (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "8") or (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "9")
+  when: ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "7" 
   tags: lighttpd
