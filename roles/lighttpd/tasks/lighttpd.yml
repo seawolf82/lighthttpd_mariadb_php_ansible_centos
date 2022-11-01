@@ -133,7 +133,7 @@
     name: python3-libsemanage
     state: present
   when: (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "8") or (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "9") 
-  tags: package
+  tags: lighttpd
 
 - name: Set httpd_setrlimit flag on and keep it persistent across reboots
   seboolean:
