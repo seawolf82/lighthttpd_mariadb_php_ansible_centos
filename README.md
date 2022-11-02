@@ -1,4 +1,4 @@
-# lighthttpd_mariadb_php_ansible_centos8
+# lighttpd_mariadb_php_ansible_centos8
 
 This ansible script install on remote machine lighttpd+mariadb+php
 
