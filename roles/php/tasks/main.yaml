@@ -27,14 +27,6 @@
   when: (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "7") 
   tags: php
 
-
-- name: Copy scl_enable.sh file into /etc/profile.d
-  copy:
-    src: scl_enable.sh
-    dest: /etc/profile.d 
-  when: (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "7") 
-  tags: php
-
 - name: Install a list of php packages
   dnf:
     name: "{{ packages }}"
@@ -57,6 +49,138 @@
     - php-intl
   when: (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "8") or (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "9") 
   tags: php
+
+
+- name: Copy scl_enable.sh file into /etc/profile.d
+  copy:
+    src: scl_enable.sh
+    dest: /etc/profile.d 
+  when: (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "7") 
+  tags: php
+
+- name: enable php on /opt/rh/rh-php73
+  shell: . /opt/rh/rh-php73/enable
+  when: (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "7") 
+  tags: php
+
+
+- name: Ensure user is lighttpd into /etc/opt/rh/rh-php73/php-fpm.d/www.conf
+  replace:
+    path: /etc/opt/rh/rh-php73/php-fpm.d/www.conf
+    regexp: '^user = apache'
+    replace: user = lighttpd
+  when: ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "7" 
+  tags: php
+
+- name: Ensure group is lighttpd into /etc/opt/rh/rh-php73/php-fpm.d/www.conf
+  replace:
+    path: /etc/opt/rh/rh-php73/php-fpm.d/www.conf
+    regexp: '^group = apache'
+    replace: group = lighttpd
+  when: ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "7" 
+  tags: php
+
+
+- name: Uncomment cgi.fix_pathinfo=1 into /etc/opt/rh/rh-php73 
+  replace:
+    path: /etc/opt/rh/rh-php73/php.ini
+    regexp: ';cgi.fix_pathinfo=1'
+    replace: cgi.fix_pathinfo=1
+  when: ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "7"
+  tags: php
+
+- name: enable rh-php73-php-fpm service
+  systemd:
+    name: rh-php73-php-fpm
+    enabled: yes
+  when: ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "7" 
+  tags: php
+  
+- name: Make sure rh-php73-php-fpm service is running
+  systemd:
+    state: started
+    name: rh-php73-php-fpm
+  when: ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "7" 
+  tags: php
+
+
+- name: Ensure user is lighttpd into /etc/php-fpm.d/www.conf
+  replace:
+    path: /etc/php-fpm.d/www.conf
+    regexp: '^user = apache'
+    replace: user = lighttpd
+  when: (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "8") or (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "9") 
+  tags: php
+
+- name: Ensure group is lighttpd into /etc/php-fpm.d/www.conf
+  replace:
+    path: /etc/php-fpm.d/www.conf
+    regexp: '^group = apache'
+    replace: group = lighttpd
+  when: (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "8") or (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "9") 
+  tags: php
+
+
+- name: change listen /run/php-fpm/www.sock to 127.0.0.1:9000 into /etc/php-fpm.d/www.conf
+  replace:
+    path: /etc/php-fpm.d/www.conf
+    regexp: '^listen = /run/php-fpm/www.sock'
+    replace: listen = 127.0.0.1:9000
+  when: (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "8") or (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "9") 
+  tags: php
+  
+- name: enable php-fpm service
+  systemd:
+    name: php-fpm
+    enabled: yes
+  when: (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "8") or (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "9") 
+  tags: php
+  
+- name: Make sure php-fpm service is running
+  systemd:
+    state: started
+    name: php-fpm
+  when: (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "8") or (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "9") 
+  tags: php
+
+
+- name: Uncomment cgi.fix_pathinfo=1 into /etc/php.ini 
+  replace:
+    path: /etc/php.ini
+    regexp: ';cgi.fix_pathinfo=1'
+    replace: cgi.fix_pathinfo=1
+  when: (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "8") or (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "9") 
+  tags: php
+
+- name: Create a directory /var/run/sockets if it does not exist
+  file:
+    path: /var/run/sockets
+    state: directory
+    mode: '0755'
+  tags: php
+
+
+- name: Recursively change ownership of a directory /var/run/sockets
+  file:
+    path: /var/run/sockets
+    state: directory
+    recurse: yes
+    owner: lighttpd
+    group: lighttpd
+  tags: php
+
+
+- name: Recursively change ownership of a directory /opt/rh/rh-php73/
+  file:
+    path: /opt/rh/rh-php73/
+    state: directory
+    recurse: yes
+    owner: lighttpd
+    group: lighttpd
+  when: ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "7" 
+  tags: php
+
+
 
 
 

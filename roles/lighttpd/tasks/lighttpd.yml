@@ -56,20 +56,6 @@
     name: lighttpd
   tags: lighttpd
 
-- name: disable httpd service
-  systemd:
-    name: httpd
-    enabled: false
-  when: (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "8") or (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "9") 
-  tags: lighttpd
-  
-- name: Make sure httpd service is stopped
-  systemd:
-    state: stopped
-    name: httpd
-  when: (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "8") or (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "9") 
-  tags: lighttpd
-
 - name: adding firewall rules http for lighttpd service
   firewalld: 
     service: http
@@ -99,68 +85,58 @@
   tags: lighttpd
 
 
-- name: Copy lighttpd_modify.conf into /etc/lighttpd/
+- name: Ensure server.use-ipv6 is set to disable into lighttpd.conf
+  replace:
+    path: /etc/lighttpd/lighttpd.conf
+    regexp: '^server.use-ipv6 = "enable"'
+    replace: server.use-ipv6 = "disable"
+  notify: Reloading lighttpd
+  tags: lighttpd
+
+
+- name: Ensure server.bind is set to listen different from localhost
+  replace:
+    path: /etc/lighttpd/lighttpd.conf
+    regexp: '^#server.bind = "localhost"'
+    replace: server.bind = "0.0.0.0"
+  notify: Reloading lighttpd
+  tags: lighttpd
+
+
+- name: Backup modules.conf if it differs from the copied version
   copy:
-    src: lighttpd_modify.conf
-    dest: /etc/lighttpd/lighttpd.conf
+    src: /etc/lighttpd/modules.conf
+    dest: /etc/lighttpd/modules.conf.bck
     owner: root
     group: root
     mode: '0644'
-  when: ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "7" 
+    remote_src: yes
+    backup: yes
   tags: lighttpd
 
-- name: Copy modules_modify.conf into /etc/lighttpd/
+
+- name: Copy modules_modify_EL7.conf into /etc/lighttpd/
   copy:
-    src: modules_modify.conf
+    src: modules_modify_EL7.conf
     dest: /etc/lighttpd/modules.conf
     owner: root
     group: root
     mode: '0644'
+  notify: Reloading lighttpd
   when: ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "7" 
   tags: lighttpd
 
-
-- name: Create a directory /var/cache/lighttpd if it does not exist
-  file:
-    path: /var/cache/lighttpd
-    state: directory
-    mode: '0755'
-  when: ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "7" 
-  tags: lighttpd
-
-- name: Create a directory /var/cache/lighttpd/compress if it does not exist
-  file:
-    path: /var/cache/lighttpd/compress
-    state: directory
-    mode: '0755'
-  when: ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "7" 
-  tags: lighttpd
-
-- name: Recursively change ownership of a directory
-  file:
-    path: /var/cache/lighttpd/compress
-    state: directory
-    recurse: yes
-    owner: lighttpd
-    group: lighttpd
-  when: ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "7" 
-  tags: lighttpd
-
-
-- name: Install python3-libsemanage
-  package:
-    name: python3-libsemanage
-    state: present
+- name: Copy modules_modify_EL8.conf into /etc/lighttpd/
+  copy:
+    src: modules_modify_EL8.conf
+    dest: /etc/lighttpd/modules.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reloading lighttpd
   when: (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "8") or (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "9") 
   tags: lighttpd
 
-- name: Set httpd_setrlimit flag on and keep it persistent across reboots
-  seboolean:
-    name: httpd_setrlimit
-    state: yes
-    persistent: yes
-  tags: lighttpd
-  
 
 - name: Backup fastcgi.conf if it differs from the copied version
   copy:
@@ -175,10 +151,10 @@
   tags: lighttpd
 
 
-- name: Copy fastcgi_modify_el7.conf into /etc/lighttpd/conf.d
+- name: Copy fastcgi_modify_EL7 into /etc/lighttpd/conf.d/
   copy:
-    src: fastcgi_modify_el7.conf
-    dest: /etc/lighttpd/conf.d/fastcgi.conf
+    src: fastcgi_modify_EL7.conf
+    dest: /etc/lighttpd/conf.d/
     owner: root
     group: root
     mode: '0644'
@@ -187,13 +163,43 @@
   tags: lighttpd
 
 
-- name: Copy fastcgi_modify.conf into /etc/lighttpd/conf.d
+- name: Copy fastcgi_modify_EL8 into /etc/lighttpd/conf.d/
   copy:
-    src: fastcgi_modify.conf
-    dest: /etc/lighttpd/conf.d/fastcgi.conf
+    src: fastcgi_modify_EL8.conf
+    dest: /etc/lighttpd/conf.d/
     owner: root
     group: root
     mode: '0644'
   notify: Reloading lighttpd
-  when: ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "7" 
+  when: (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "8") or (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "9")  
   tags: lighttpd
+
+- name: Install python3-libsemanage
+  package:
+    name: python3-libsemanage
+    state: present
+  when: (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "8") or (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "9") 
+  tags: lighttpd
+
+
+- name: Install libsemanage-python
+  package:
+    name: libsemanage-python
+    state: present
+  when: ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "7"
+  tags: lighttpd  
+
+- name: Set httpd_setrlimit flag on and keep it persistent across reboots
+  seboolean:
+    name: httpd_setrlimit
+    state: yes
+    persistent: yes
+  tags: lighttpd
+  
+- name: restart service lighttpd
+  systemd:
+    state: restarted
+    name: lighttpd
+  when: (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "8") or (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution_major_version'] == "9") 
+  tags: lighttpd
+  
